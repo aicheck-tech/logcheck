@@ -1,0 +1,6 @@
+LOG_PATH=/data/logs
+SLACK_URL=https://hooks.slack.com/services/{app}/{token1}/{token2}
+SLACK_APP=xxx
+SLACK_TOKEN1=yyy
+SLACK_TOKEN2=zzz
+SLACK_MAPPING={"janrygl": "U01JPPLNUKH", "jiripomikalek": "U02D130H93M"}
