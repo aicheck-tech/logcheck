@@ -1,4 +1,4 @@
-LOG_PATH=/data/logs
+LOG_PATH=/data/log/python-slack-logs
 SLACK_URL=https://hooks.slack.com/services/{app}/{token1}/{token2}
 SLACK_APP=xxx
 SLACK_TOKEN1=yyy

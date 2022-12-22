@@ -6,7 +6,7 @@ class LoggerContext(threading.local):
     _instance: 'LoggerContext' = None
 
     def __init__(self):
-        self.transaction_id: Optional[str] = None
+        self.identifier: Optional[str] = None
 
     # Allow only a single instance of this object to exist in a thread
     @classmethod
@@ -16,9 +16,9 @@ class LoggerContext(threading.local):
         return cls._instance
 
     @classmethod
-    def set(cls, *, transaction_id: str):
-        cls.instance().transaction_id = transaction_id
+    def set(cls, *, identifier: str):
+        cls.instance().identifier = identifier
 
     @classmethod
     def reset(cls):
-        cls.instance().transaction_id = None
+        cls.instance().identifier = None

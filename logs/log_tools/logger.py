@@ -2,8 +2,10 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
+from pygit2 import Repository, GitError
 
 from logs.log_tools.add_context_filter import AddContextFilter
 from logs.log_tools.log_formatter import LogFormatter
@@ -14,12 +16,33 @@ from logs.slack.slack_handler import SlackHandler
 load_dotenv()
 
 
-LOG_PATH = Path(os.environ["LOG_PATH"]) if "LOG_PATH" in os.environ else Path("data/logs").resolve()
-LOG_PATH.mkdir(exist_ok=True, parents=True)
 LESS_VERBOSE_LOGGERS = ("gunicorn.error", "uvicorn", "sqlalchemy", "fastapi", "pika")
+if "LOG_PATH" in os.environ:
+    LOG_PATH = Path(os.environ["LOG_PATH"])
+else:
+    try:
+        LOG_PATH = Path(Repository('.').workdir).resolve() / "data" / "logs"
+    except GitError:
+        LOG_PATH = Path(".").resolve() / "data" / "logs"
+
+LOG_PATH.mkdir(exist_ok=True, parents=True)
 
 
-def setup_logging(task_name):
+def setup_logging(task_name: str) -> logging.Logger:
+    """Setup loggers to output to rotated file, standard output and optionally to slack.
+    Call at least once in the beginning of the script to enable correct logging.
+
+    Args:
+        task_name: String description (ASCII) of logged task,
+                   save logs to file named `task_name`,
+                   slack integration uses string `task_name` in message.
+
+    Returns:
+        root logger
+    """
+    if not isinstance(task_name, str):
+        raise ValueError(f"Cannot init logging with non-string task_name=`{task_name}`.")
+
     # Clean up root logger
     for handler in list(logging.root.handlers):
         logging.root.removeHandler(handler)
@@ -66,7 +89,7 @@ def setup_logging(task_name):
     output_handlers.append(console_output)
 
     if os.environ.get("SLACK_URL"):
-        slack_output = SlackHandler()
+        slack_output = SlackHandler(name=task_name)
         slack_output.addFilter(AddContextFilter(context))
         slack_output.setFormatter(formatter)
         slack_output.setLevel(logging.ERROR)
@@ -77,3 +100,21 @@ def setup_logging(task_name):
         logger_.setLevel(level)
         for handler in output_handlers:
             logger_.addHandler(handler)
+
+    if not os.environ.get("SLACK_URL"):
+        logging.getLogger().warning("Slack logging turned off.")
+
+    return logging.getLogger()
+
+
+def set_task_context(identifier: Optional[str] = None):
+    """Modify logging format to output `identifier` to every message in current thread.
+
+    Args:
+        identifier: Any string describing current process. Use default None if there is no such string.
+
+    """
+    if identifier:
+        LoggerContext.instance().set(identifier=identifier)
+    else:
+        LoggerContext.instance().set(identifier=None)

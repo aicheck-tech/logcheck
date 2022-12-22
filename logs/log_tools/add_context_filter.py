@@ -10,5 +10,5 @@ class AddContextFilter(logging.Filter):
         self.default = default or {}
 
     def filter(self, record):
-        record.transaction_id = self._context.transaction_id or ''
+        record.identifier = self._context.identifier or ''
         return True

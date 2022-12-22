@@ -23,7 +23,7 @@ class LogFormatter(logging.Formatter):
         original_format = self._style._fmt
 
         # Replace the original format with one customized by logging level
-        self._style._fmt = "%(asctime)s %(transaction_id)s %(levelname)s %(message)s"
+        self._style._fmt = "%(asctime)s %(identifier)s %(levelname)s %(message)s"
 
         # Call the original formatter class to do the grunt work
         result = logging.Formatter.format(self, record)
