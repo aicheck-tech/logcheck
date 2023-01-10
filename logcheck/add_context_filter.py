@@ -1,6 +1,6 @@
 import logging
 
-from logcheck.log_tools.logger_context import LoggerContext
+from logcheck.logger_context import LoggerContext
 
 
 class AddContextFilter(logging.Filter):

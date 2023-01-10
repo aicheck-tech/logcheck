@@ -29,7 +29,7 @@ class SlackHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
-            current_repo = Repository('.')
+            current_repo = Repository('')
             git_text_ = f"{current_repo.head.shorthand}@{self.host_name}:{current_repo.workdir}"
         except pygit2.errors.GitError:
             git_text_ = "nogit"

@@ -7,9 +7,9 @@ from typing import Optional
 from dotenv import load_dotenv
 from pygit2 import Repository, GitError
 
-from logcheck.log_tools.add_context_filter import AddContextFilter
-from logcheck.log_tools.log_formatter import LogFormatter
-from logcheck.log_tools.logger_context import LoggerContext
+from logcheck.add_context_filter import AddContextFilter
+from logcheck.log_formatter import LogFormatter
+from logcheck.logger_context import LoggerContext
 from logcheck.slack.slack_handler import SlackHandler
 
 
@@ -21,9 +21,9 @@ if "LOG_PATH" in os.environ:
     LOG_PATH = Path(os.environ["LOG_PATH"])
 else:
     try:
-        LOG_PATH = Path(Repository('.').workdir).resolve() / "data" / "logs"
+        LOG_PATH = Path(Repository('').workdir).resolve() / "data" / "logs"
     except GitError:
-        LOG_PATH = Path(".").resolve() / "data" / "logs"
+        LOG_PATH = Path("").resolve() / "data" / "logs"
 
 LOG_PATH.mkdir(exist_ok=True, parents=True)
 
