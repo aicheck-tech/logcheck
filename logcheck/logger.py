@@ -10,7 +10,7 @@ from pygit2 import Repository, GitError
 from logcheck.add_context_filter import AddContextFilter
 from logcheck.log_formatter import LogFormatter
 from logcheck.logger_context import LoggerContext
-from logcheck.slack.slack_handler import SlackHandler
+from logcheck.slack_handler import SlackHandler
 
 
 load_dotenv()
