@@ -9,7 +9,7 @@ import pygit2.errors
 from pygit2 import Repository
 from sqlitedict import SqliteDict
 
-from logs.slack.slack_integration import SlackIntegration
+from logcheck.slack.slack_integration import SlackIntegration
 
 
 class SlackHandler(logging.Handler):
