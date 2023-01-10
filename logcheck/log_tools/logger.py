@@ -7,10 +7,10 @@ from typing import Optional
 from dotenv import load_dotenv
 from pygit2 import Repository, GitError
 
-from logs.log_tools.add_context_filter import AddContextFilter
-from logs.log_tools.log_formatter import LogFormatter
-from logs.log_tools.logger_context import LoggerContext
-from logs.slack.slack_handler import SlackHandler
+from logcheck.log_tools.add_context_filter import AddContextFilter
+from logcheck.log_tools.log_formatter import LogFormatter
+from logcheck.log_tools.logger_context import LoggerContext
+from logcheck.slack.slack_handler import SlackHandler
 
 
 load_dotenv()

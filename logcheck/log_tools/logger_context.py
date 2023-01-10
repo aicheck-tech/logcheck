@@ -16,7 +16,7 @@ class LoggerContext(threading.local):
         return cls._instance
 
     @classmethod
-    def set(cls, *, identifier: str):
+    def set(cls, *, identifier: Optional[str]):
         cls.instance().identifier = identifier
 
     @classmethod
