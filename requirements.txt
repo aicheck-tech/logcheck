@@ -3,3 +3,4 @@ python-dotenv
 pytz
 requests
 sqlite3
+pytest

@@ -1,10 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 from typing import Optional
-from concurrent.futures import ThreadPoolExecutor
 
 import requests
-import time
 
 from dotenv import load_dotenv
 
