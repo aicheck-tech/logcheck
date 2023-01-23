@@ -2,4 +2,4 @@ pygit2
 python-dotenv
 pytz
 requests
-sqlitedict
+sqlite3

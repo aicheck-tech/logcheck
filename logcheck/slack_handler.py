@@ -2,12 +2,13 @@ import logging
 import socket
 import tempfile
 import time
+import sqlite3
 from pathlib import Path
 from typing import Optional
+import random
 
 import pygit2.errors
 from pygit2 import Repository
-from sqlitedict import SqliteDict
 
 from logcheck.slack_integration import SlackIntegration
 
@@ -19,11 +20,12 @@ class SlackHandler(logging.Handler):
     def __init__(self, name: Optional[str] = None):
         self.slack_tool = SlackIntegration()
         self.host_name = socket.gethostname()
-        self.cache = SqliteDict(
-            filename=(Path(tempfile.gettempdir()) / ".slack_handler.cache").resolve(),
-            tablename="cache_errors",
-            autocommit=True
-        )
+        self.cache = sqlite3.connect((Path(tempfile.gettempdir()) / ".slack_handler.cache").resolve())
+        self.cur = self.cache.cursor()
+
+        self.cur.execute("DROP TABLE IF EXISTS logs;")
+        self.cur.execute("CREATE TABLE logs(key TEXT PRIMARY KEY, time NUMERIC);")
+
         self.task_name = name
         super().__init__()
 
@@ -55,9 +57,21 @@ class SlackHandler(logging.Handler):
         msg = f"_{record.asctime}_ _{error_name_}_{identifier} `{incident_at_}` *{git_text_}* {description_}".strip()
         cache_key = f"{identifier}/{incident_at_}/{git_text_}/{description_}"
 
-        if time.time() - self.cache.get(cache_key, 0) >= self.MIN_DELAY_BETWEEN_ERRORS:
-            self.cache[cache_key] = time.time()
+        if time.time() - self.getCache(cache_key) >= self.MIN_DELAY_BETWEEN_ERRORS:
+            self.setCache(cache_key, time.time())
             code = None
             if record.exc_info:
                 code = record.exc_text
             self.slack_tool.send_slack_msg(msg, code=code)
+
+    def getCache(self, key):
+        res = self.cur.execute("SELECT time FROM logs WHERE key=?;", [key]).fetchone()
+        return res[0] if res is not None else 0
+
+    def setCache(self, key, value):
+        try:
+            self.cur.execute("INSERT INTO logs VALUES (?, ?);", [key, value])
+        except sqlite3.IntegrityError:
+            self.cur.execute("UPDATE logs SET time=? WHERE key=?;", [value, key])
+
+        self.cache.commit()
