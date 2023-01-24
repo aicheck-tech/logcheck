@@ -2,6 +2,7 @@ from multiprocessing import Pool
 from pathlib import Path
 import sqlite3
 
+from logcheck import SQL_cache_create
 
 class DummyLogger:
 
@@ -11,7 +12,7 @@ class DummyLogger:
         self.cache = sqlite3.connect(self.db_file)
         self.cur = self.cache.cursor()
         try:
-            self.cur.execute((Path(__file__).parent.parent / "logcheck" / "cached_log_messages.sql").read_text())
+            self.cur.execute(SQL_cache_create)
         except sqlite3.OperationalError as ex:
             if "database is locked" not in str(ex):
                 raise

@@ -9,7 +9,9 @@ from typing import Optional
 import pygit2.errors
 from pygit2 import Repository
 
+from logcheck import SQL_cache_create
 from logcheck.slack_integration import SlackIntegration
+
 
 
 class TLogRecord(logging.LogRecord):
@@ -26,7 +28,7 @@ class SlackHandler(logging.Handler):
         self.cache = sqlite3.connect((Path(tempfile.gettempdir()) / ".slack_handler.cache").resolve())
         self.cur = self.cache.cursor()
         try:
-            self.cur.execute((Path(__file__).parent / "cached_log_messages.sql").read_text())
+            self.cur.execute(SQL_cache_create)
         except sqlite3.OperationalError as ex:
             if "database is locked" not in str(ex):  # lock means table already exists
                 raise
