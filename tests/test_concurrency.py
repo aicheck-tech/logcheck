@@ -2,7 +2,7 @@ from multiprocessing import Pool
 from pathlib import Path
 import sqlite3
 
-from logcheck import SQL_cache_create
+from logcheck.slack_handler import SQL_cache_create
 
 class DummyLogger:
 

@@ -9,9 +9,15 @@ from typing import Optional
 import pygit2.errors
 from pygit2 import Repository
 
-from logcheck import SQL_cache_create
 from logcheck.slack_integration import SlackIntegration
 
+
+SQL_cache_create = (
+    "CREATE TABLE IF NOT EXISTS cached_log_messages ( \
+        message       TEXT          PRIMARY KEY, \
+        timestamp     NUMERIC       not null \
+    );"
+)
 
 
 class TLogRecord(logging.LogRecord):
