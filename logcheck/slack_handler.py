@@ -12,6 +12,10 @@ from pygit2 import Repository
 from logcheck.slack_integration import SlackIntegration
 
 
+class TLogRecord(logging.LogRecord):
+    identifier: Optional[str]
+
+
 class SlackHandler(logging.Handler):
 
     MIN_DELAY_BETWEEN_ERRORS = 3600
@@ -21,14 +25,18 @@ class SlackHandler(logging.Handler):
         self.host_name = socket.gethostname()
         self.cache = sqlite3.connect((Path(tempfile.gettempdir()) / ".slack_handler.cache").resolve())
         self.cur = self.cache.cursor()
-        self.cur.execute("CREATE TABLE IF NOT EXISTS logs(key TEXT PRIMARY KEY, time NUMERIC);")
+        try:
+            self.cur.execute((Path(__file__).parent / "cached_log_messages.sql").read_text())
+        except sqlite3.OperationalError as ex:
+            if "database is locked" not in str(ex):  # lock means table already exists
+                raise
 
         self.task_name = name
         super().__init__()
 
-    def emit(self, record: logging.LogRecord) -> None:
+    def emit(self, record: TLogRecord) -> None:
         try:
-            current_repo = Repository('')
+            current_repo = Repository(Path(".").resolve())
             git_text_ = f"{current_repo.head.shorthand}@{self.host_name}:{current_repo.workdir}"
         except pygit2.errors.GitError:
             git_text_ = "nogit"
@@ -62,13 +70,13 @@ class SlackHandler(logging.Handler):
             self.slack_tool.send_slack_msg(msg, code=code)
 
     def get_cache(self, key):
-        res = self.cur.execute("SELECT time FROM logs WHERE key=?;", [key]).fetchone()
+        res = self.cur.execute("SELECT timestamp FROM cached_log_messages WHERE message=?;", [key]).fetchone()
         return res[0] if res is not None else 0
 
     def set_cache(self, key, value):
         try:
-            self.cur.execute("INSERT INTO logs VALUES (?, ?);", [key, value])
+            self.cur.execute("INSERT INTO cached_log_messages VALUES (?, ?);", [key, value])
         except sqlite3.IntegrityError:
-            self.cur.execute("UPDATE logs SET time=? WHERE key=?;", [value, key])
+            self.cur.execute("UPDATE cached_log_messages SET timestamp=? WHERE message=?;", [value, key])
 
         self.cache.commit()

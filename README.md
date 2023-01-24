@@ -1,4 +1,4 @@
-# LogCheck
+﻿# LogCheck
 
 Simple logging with connector to slack.
 
@@ -32,7 +32,7 @@ setup_logging("some_file_name")
 
 def task(tid: str):
     set_task_context(tid)
-    logger.info(f"test {tid}")
+    logger.info(f"tests {tid}")
     set_task_context(None)
 
 
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     task("a")
     task("b")
     task("c")
-    logger.error("test Slack integration")
+    logger.error("tests Slack integration")
 
 ```
 
