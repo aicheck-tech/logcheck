@@ -12,7 +12,7 @@ from pygit2 import Repository
 from logcheck.slack_integration import SlackIntegration
 
 
-SQL_cache_create = (
+INIT_SQL_TABLE = (
     "CREATE TABLE IF NOT EXISTS cached_log_messages ( \
         message       TEXT          PRIMARY KEY, \
         timestamp     NUMERIC       not null \
@@ -31,10 +31,13 @@ class SlackHandler(logging.Handler):
     def __init__(self, name: Optional[str] = None):
         self.slack_tool = SlackIntegration()
         self.host_name = socket.gethostname()
-        self.cache = sqlite3.connect((Path(tempfile.gettempdir()) / ".slack_handler.cache").resolve())
-        self.cur = self.cache.cursor()
+        self.cache_path = (Path(tempfile.gettempdir()) / ".slack_handler.cache").resolve()
         try:
-            self.cur.execute(SQL_cache_create)
+            connection = sqlite3.connect(self.cache_path)
+            cursor = connection.cursor()
+            cursor.execute(INIT_SQL_TABLE)
+            cursor.close()
+            connection.close()
         except sqlite3.OperationalError as ex:
             if "database is locked" not in str(ex):  # lock means table already exists
                 raise
@@ -78,13 +81,21 @@ class SlackHandler(logging.Handler):
             self.slack_tool.send_slack_msg(msg, code=code)
 
     def get_cache(self, key):
-        res = self.cur.execute("SELECT timestamp FROM cached_log_messages WHERE message=?;", [key]).fetchone()
+        connection = sqlite3.connect(self.cache_path)
+        cursor = connection.cursor()
+        res = cursor.execute("SELECT timestamp FROM cached_log_messages WHERE message=?;", [key]).fetchone()
+        cursor.close()
+        connection.close()
         return res[0] if res is not None else 0
 
     def set_cache(self, key, value):
-        try:
-            self.cur.execute("INSERT INTO cached_log_messages VALUES (?, ?);", [key, value])
-        except sqlite3.IntegrityError:
-            self.cur.execute("UPDATE cached_log_messages SET timestamp=? WHERE message=?;", [value, key])
+        connection = sqlite3.connect(self.cache_path)
+        cursor = connection.cursor()
 
-        self.cache.commit()
+        try:
+            cursor.execute("INSERT INTO cached_log_messages VALUES (?, ?);", [key, value])
+        except sqlite3.IntegrityError:
+            cursor.execute("UPDATE cached_log_messages SET timestamp=? WHERE message=?;", [value, key])
+
+        cursor.close()
+        connection.close()

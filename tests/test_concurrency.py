@@ -1,8 +1,10 @@
+from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Pool
 from pathlib import Path
 import sqlite3
 
-from logcheck.slack_handler import SQL_cache_create
+from logcheck.slack_handler import INIT_SQL_TABLE
+
 
 class DummyLogger:
 
@@ -12,7 +14,7 @@ class DummyLogger:
         self.cache = sqlite3.connect(self.db_file)
         self.cur = self.cache.cursor()
         try:
-            self.cur.execute(SQL_cache_create)
+            self.cur.execute(INIT_SQL_TABLE)
         except sqlite3.OperationalError as ex:
             if "database is locked" not in str(ex):
                 raise
@@ -33,6 +35,22 @@ class DummyLogger:
     def clean():
         if DummyLogger.db_file.is_file():
             DummyLogger.db_file.unlink(missing_ok=True)
+
+
+def thread_complex_get_cache(key):
+    logger = DummyLogger()
+    return logger.get_cache(key)
+
+
+def thread_complex_log_task(key, value):
+    logger = DummyLogger()
+    logger.set_cache(key, value)
+    pool = Pool(1)
+    process = pool.apply_async(thread_complex_get_cache, [key])
+    result = process.get()
+    pool.close()
+    pool.join()
+    return result == value
 
 
 def log_task(value, key='log_message'):
@@ -60,4 +78,11 @@ def test_async_big_data():
     cache = sqlite3.connect(DummyLogger.db_file)
     cur = cache.cursor()
     assert len(cur.execute("SELECT * FROM cached_log_messages").fetchall()) == 10000
+    DummyLogger.clean()
+
+
+def test_thread_in_thread():
+    executor = ProcessPoolExecutor()
+    res = executor.map(thread_complex_log_task, ("1", "2", "3"), ("x", "x", "x"))
+    assert all(res)
     DummyLogger.clean()
